@@ -1,22 +1,33 @@
-# On branch m-100
-# Changes to be committed:
-#   (use "git reset HEAD <file>..." to unstage)
-#
-#	modified:   base-files/etc/uci-defaults/01_leds
-#	modified:   base-files/lib/ramips.sh
-#	modified:   base-files/lib/upgrade/platform.sh
-#	new file:   dts/M-100.dts
-#	modified:   image/Makefile
-#	new file:   mt7620a/profiles/baidu.mk
+commit 089f245c75ec7269220bc13347b1264b54c0a16d
+Author: JiapengLi <gapleehit@gmail.com>
+Date:   Tue Apr 1 22:37:10 2014 +0800
+
+    [ramips][mt7620a]Add support for Baidu M-100(A router with audio output)
+
+diff --git a/target/linux/ramips/base-files/etc/diag.sh b/target/linux/ramips/base-files/etc/diag.sh
+index 4168d0a..198a057 100755
+--- a/target/linux/ramips/base-files/etc/diag.sh
++++ b/target/linux/ramips/base-files/etc/diag.sh
+@@ -58,6 +58,9 @@ get_status_led() {
+ 	hw550-3g)
+ 		status_led="hw550-3g:green:status"
+ 		;;
++	m-100)
++		status_led="baidu:red:status"
++		;;
+ 	m3)
+ 		status_led="m3:blue:status"
+ 		;;
 diff --git a/target/linux/ramips/base-files/etc/uci-defaults/01_leds b/target/linux/ramips/base-files/etc/uci-defaults/01_leds
-index 567835e..c9c1d4b 100755
+index 567835e..a7a0b44 100755
 --- a/target/linux/ramips/base-files/etc/uci-defaults/01_leds
 +++ b/target/linux/ramips/base-files/etc/uci-defaults/01_leds
-@@ -103,6 +103,8 @@ case $board in
+@@ -103,6 +103,9 @@ case $board in
  	hw550-3g)
  		set_usb_led "hw550-3g:green:usb"
  		;;
 +	m-100)
++		set_wifi_led "baidu:blue:wlan"
 +		;;
  	mofi3500-3gn)
  		set_usb_led "mofi3500-3gn:green:usb"
@@ -49,10 +60,10 @@ index 8ff6063..f8c8672 100755
  	mofi3500-3gn | \
 diff --git a/target/linux/ramips/dts/M-100.dts b/target/linux/ramips/dts/M-100.dts
 new file mode 100644
-index 0000000..99987f6
+index 0000000..74cd7ef
 --- /dev/null
 +++ b/target/linux/ramips/dts/M-100.dts
-@@ -0,0 +1,146 @@
+@@ -0,0 +1,129 @@
 +/dts-v1/;
 +
 +/include/ "mt7620a.dtsi"
@@ -62,19 +73,21 @@ index 0000000..99987f6
 +	model = "BAIDU M-100";
 +
 +	palmbus@10000000 {
++		gpio0: gpio@600 {
++			status = "okay";
++		};
 +		gpio1: gpio@638 {
 +			status = "okay";
 +		};
-+
-+		i2c@900 {
++		gpio2: gpio@660 {
++			status = "okay";
++		};
++		gpio3: gpio@688 {
 +			status = "okay";
 +		};
 +
 +		i2s@a00 {
 +			status = "okay";
-+
-+			pinctrl-names = "default";
-+			pinctrl-0 = <&pcm_i2s_pins>;
 +		};
 +
 +		spi@b00 {
@@ -108,16 +121,9 @@ index 0000000..99987f6
 +
 +				partition@50000 {
 +					label = "firmware";
-+					// 8M
-+					reg = <0x50000 0x7b0000>;
-+					// 16M
-+					// reg = <0x50000 0xfb0000>; 
++					reg = <0x50000 0x7b0000>; // 8M-0x7b0000; 16M-0xFb0000;
 +				};
 +			};
-+		};
-+
-+		pcm@2000 {
-+			status = "okay";
 +		};
 +
 +		gdma@2800 {
@@ -129,45 +135,20 @@ index 0000000..99987f6
 +	pinctrl {
 +		state_default: pinctrl0 {
 +			gpio {
-+				ralink,group = "mdio", "rgmii1";
++				ralink,group = "wled", "mdio", "i2c", "rgmii1", "rgmii2";
 +				ralink,function = "gpio";
++			};
++			i2s_gpio {
++				ralink,group = "uartf";
++				ralink,function = "gpio i2s";
 +			};
 +		};
 +	};
 +
 +	ethernet@10100000 {
 +		status = "okay";
-+
-+		pinctrl-names = "default";
-+		pinctrl-0 = <&rgmii1_pins &rgmii2_pins &mdio_pins>;
-+
++		mtd-mac-address = <&factory 0x4>;
 +		ralink,port-map = "llllw";
-+
-+		port@4 {
-+			status = "okay";
-+			phy-mode = "rgmii";
-+			phy-handle = <&phy4>;
-+		};
-+
-+		port@5 {
-+			status = "okay";
-+			phy-mode = "rgmii";
-+			phy-handle = <&phy5>;
-+		};
-+
-+		mdio-bus {
-+			status = "okay";
-+
-+			phy4: ethernet-phy@4 {
-+				reg = <4>;
-+				phy-mode = "rgmii";
-+			};
-+
-+			phy5: ethernet-phy@5 {
-+				reg = <5>;
-+				phy-mode = "rgmii";
-+			};
-+		};
 +	};
 +
 +	gsw@10110000 {
@@ -182,37 +163,66 @@ index 0000000..99987f6
 +		status = "okay";
 +	};
 +
++	gpio-leds {
++		compatible = "gpio-leds";
++		status {
++			label = "baidu:red:status";
++			gpios = <&gpio0 11 0>;
++		};
++		wlan {
++			label = "baidu:blue:wlan";
++			gpios = <&gpio3 0 1>;
++		};
++	};
++
 +	gpio-keys-polled {
 +		compatible = "gpio-keys";
 +		#address-cells = <1>;
 +		#size-cells = <0>;
 +		poll-interval = <20>;
-+		s2 {
-+			label = "S2";
-+			gpios = <&gpio0 1 1>;
-+			linux,code = <0x100>;
++		reset {
++			label = "reset";
++			gpios = <&gpio0 13 1>;
++			linux,code = <0x198>;
 +		};
-+		s3 {
-+			label = "S3";
-+			gpios = <&gpio0 2 1>;
-+			linux,code = <0x101>;
++		wps {
++			label = "wps";
++			gpios = <&gpio1 3 1>;	//GPIO27
++			linux,code = <0x211>;
 +		};
 +	};
++
 +};
+diff --git a/target/linux/ramips/dts/mt7620a.dtsi b/target/linux/ramips/dts/mt7620a.dtsi
+index b990ed3..2ade69a 100644
+--- a/target/linux/ramips/dts/mt7620a.dtsi
++++ b/target/linux/ramips/dts/mt7620a.dtsi
+@@ -282,6 +282,12 @@
+ 		pinctrl-0 = <&state_default>;
+ 		state_default: pinctrl0 {
+ 		};
++		i2s_gpio_pins: i2s_gpio {
++			i2s_gpio {
++				ralink,group = "uartf";
++				ralink,function = "gpio i2s";
++			};
++		};
+ 		pcm_i2s_pins: pcm_i2s {
+ 			pcm_i2s {
+ 				ralink,group = "uartf";
 diff --git a/target/linux/ramips/image/Makefile b/target/linux/ramips/image/Makefile
-index c6a42ad..d7c1400 100644
+index c6a42ad..22afee1 100644
 --- a/target/linux/ramips/image/Makefile
 +++ b/target/linux/ramips/image/Makefile
-@@ -661,6 +661,8 @@ Image/Build/Profile/MT7620a_MT7610e=$(call BuildFirmware/Default8M/$(1),$(1),mt7
+@@ -661,6 +661,7 @@ Image/Build/Profile/MT7620a_MT7610e=$(call BuildFirmware/Default8M/$(1),$(1),mt7
  Image/Build/Profile/MT7620a_MT7530=$(call BuildFirmware/Default8M/$(1),$(1),mt7620a_mt7530,MT7620a_MT7530)
  Image/Build/Profile/MT7620a_V22SG=$(call BuildFirmware/Default8M/$(1),$(1),mt7620a_v22sg,MT7620a_V22SG)
  Image/Build/Profile/RP-N53=$(call BuildFirmware/Default8M/$(1),$(1),rp_n53,RP-N53)
 +Image/Build/Profile/M-100=$(call BuildFirmware/Default8M/$(1),$(1),m-100,M-100)
-+#Image/Build/Profile/M-100=$(call BuildFirmware/Default16M/$(1),$(1),m-100,M-100)
  whr_300hp2_mtd_size=7012352
  Image/Build/Profile/WHR300HP2=$(call BuildFirmware/CustomFlash/$(1),$(1),whr-300hp2,WHR-300HP2,$(whr_300hp2_mtd_size))
  Image/Build/Profile/WHR600D=$(call BuildFirmware/CustomFlash/$(1),$(1),whr-600d,WHR-600D,$(whr_300hp2_mtd_size))
-@@ -680,6 +682,7 @@ define Image/Build/Profile/Default
+@@ -680,6 +681,7 @@ define Image/Build/Profile/Default
  	$(call Image/Build/Profile/WHR300HP2,$(1))
  	$(call Image/Build/Profile/WHR600D,$(1))
  	$(call Image/Build/Profile/NA930,$(1))
@@ -222,33 +232,26 @@ index c6a42ad..d7c1400 100644
  
 diff --git a/target/linux/ramips/mt7620a/profiles/baidu.mk b/target/linux/ramips/mt7620a/profiles/baidu.mk
 new file mode 100644
-index 0000000..7521fe4
+index 0000000..7029517
 --- /dev/null
 +++ b/target/linux/ramips/mt7620a/profiles/baidu.mk
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,23 @@
 +#
 +# Copyright (C) 2013 OpenWrt.org
 +#
 +# This is free software, licensed under the GNU General Public License v2.
 +# See /LICENSE for more information.
-+#
++# kmod-i2c-ralink \
 +
 +define Profile/M-100
 +	NAME:=BAIDU M-100
 +	PACKAGES:=\
-+		kmod-usb-core kmod-usb2 kmod-usb-dwc2 \
++		kmod-usb-core kmod-usb-dwc2 \
 +		kmod-ledtrig-usbdev \
 +		kmod-sound-core kmod-sound-mt7620 \
-+		kmod-ledtrig-timer \
-+		kmod-usb-acm kmod-usb-net kmod-usb-net-asix kmod-usb-net-rndis kmod-usb-serial kmod-usb-serial-option \
-+		kmod-usb-serial-ftdi kmod-usb-serial-pl2303 kmod-usb-serial-mos7720 kmod-usb-serial-ch341 usbutils \
-+		usb-modeswitch usb-modeswitch-data comgt \
-+		ser2net coreutils coreutils-stty \
-+		kmod-usb-storage kmod-usb-storage-extras kmod-fs-ext4 kmod-fs-vfat kmod-fs-ntfs kmod-fuse ntfs-3g block-mount \
-+		kmod-nls-cp437 kmod-nls-iso8859-1 block-hotplug \
-+		kmod-input-core kmod-soundcore kmod-usb-audio madplay mdnsresponder libspeex mpd mpc \
++		kmod-input-core madplay mdnsresponder libspeex mpd mpc \
 +		alsa-lib alsa-utils alsa-utils-tests libffmpeg-mini minidlna\
-+		luci luci-proto-3g luci-app-minidlna 
++		luci luci-app-minidlna 
 +endef
 +
 +define Profile/M-100/Description
