@@ -30,6 +30,7 @@ By now, OpenWrt doesn't support all features of mt7620a chip, so be careful with
 	telnet 192.168.169.1     // For windows user, firewall may need to be closed
 
 ### Layout
+
 Creating 7 MTD partitions on "raspi":  
 0x000000000000-0x000000800000 : "ALL"  
 0x000000000000-0x000000030000 : "Bootloader"  
