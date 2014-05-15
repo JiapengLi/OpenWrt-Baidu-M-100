@@ -1,14 +1,14 @@
-commit 089f245c75ec7269220bc13347b1264b54c0a16d
+commit 4efd1312b59513bca7024f671812747423b547d1
 Author: JiapengLi <gapleehit@gmail.com>
 Date:   Tue Apr 1 22:37:10 2014 +0800
 
     [ramips][mt7620a]Add support for Baidu M-100(A router with audio output)
 
 diff --git a/target/linux/ramips/base-files/etc/diag.sh b/target/linux/ramips/base-files/etc/diag.sh
-index 4168d0a..198a057 100755
+index 075562a..ae64fe5 100755
 --- a/target/linux/ramips/base-files/etc/diag.sh
 +++ b/target/linux/ramips/base-files/etc/diag.sh
-@@ -58,6 +58,9 @@ get_status_led() {
+@@ -61,6 +61,9 @@ get_status_led() {
  	hw550-3g)
  		status_led="hw550-3g:green:status"
  		;;
@@ -19,10 +19,10 @@ index 4168d0a..198a057 100755
  		status_led="m3:blue:status"
  		;;
 diff --git a/target/linux/ramips/base-files/etc/uci-defaults/01_leds b/target/linux/ramips/base-files/etc/uci-defaults/01_leds
-index 567835e..a7a0b44 100755
+index 74ba0ba..cf51ce4 100755
 --- a/target/linux/ramips/base-files/etc/uci-defaults/01_leds
 +++ b/target/linux/ramips/base-files/etc/uci-defaults/01_leds
-@@ -103,6 +103,9 @@ case $board in
+@@ -106,6 +106,9 @@ case $board in
  	hw550-3g)
  		set_usb_led "hw550-3g:green:usb"
  		;;
@@ -33,10 +33,10 @@ index 567835e..a7a0b44 100755
  		set_usb_led "mofi3500-3gn:green:usb"
  		;;
 diff --git a/target/linux/ramips/base-files/lib/ramips.sh b/target/linux/ramips/base-files/lib/ramips.sh
-index a3a26cb..57ef110 100755
+index 7f221f8..463a2bb 100755
 --- a/target/linux/ramips/base-files/lib/ramips.sh
 +++ b/target/linux/ramips/base-files/lib/ramips.sh
-@@ -64,6 +64,9 @@ ramips_board_detect() {
+@@ -70,6 +70,9 @@ ramips_board_detect() {
  	*"Aztech HW550-3G")
  		name="hw550-3g"
  		;;
@@ -47,10 +47,10 @@ index a3a26cb..57ef110 100755
  		name="dcs-930"
  		;;
 diff --git a/target/linux/ramips/base-files/lib/upgrade/platform.sh b/target/linux/ramips/base-files/lib/upgrade/platform.sh
-index 8ff6063..f8c8672 100755
+index d8098b2..d981748 100755
 --- a/target/linux/ramips/base-files/lib/upgrade/platform.sh
 +++ b/target/linux/ramips/base-files/lib/upgrade/platform.sh
-@@ -50,6 +50,7 @@ platform_check_image() {
+@@ -51,6 +51,7 @@ platform_check_image() {
  	hg255d | \
  	hlk-rm04 | \
  	ip2202 | \
@@ -211,10 +211,10 @@ index b990ed3..2ade69a 100644
  			pcm_i2s {
  				ralink,group = "uartf";
 diff --git a/target/linux/ramips/image/Makefile b/target/linux/ramips/image/Makefile
-index c6a42ad..22afee1 100644
+index 19932f6..7fb5da6 100644
 --- a/target/linux/ramips/image/Makefile
 +++ b/target/linux/ramips/image/Makefile
-@@ -661,6 +661,7 @@ Image/Build/Profile/MT7620a_MT7610e=$(call BuildFirmware/Default8M/$(1),$(1),mt7
+@@ -679,6 +679,7 @@ Image/Build/Profile/MT7620a_MT7610e=$(call BuildFirmware/Default8M/$(1),$(1),mt7
  Image/Build/Profile/MT7620a_MT7530=$(call BuildFirmware/Default8M/$(1),$(1),mt7620a_mt7530,MT7620a_MT7530)
  Image/Build/Profile/MT7620a_V22SG=$(call BuildFirmware/Default8M/$(1),$(1),mt7620a_v22sg,MT7620a_V22SG)
  Image/Build/Profile/RP-N53=$(call BuildFirmware/Default8M/$(1),$(1),rp_n53,RP-N53)
@@ -222,7 +222,7 @@ index c6a42ad..22afee1 100644
  whr_300hp2_mtd_size=7012352
  Image/Build/Profile/WHR300HP2=$(call BuildFirmware/CustomFlash/$(1),$(1),whr-300hp2,WHR-300HP2,$(whr_300hp2_mtd_size))
  Image/Build/Profile/WHR600D=$(call BuildFirmware/CustomFlash/$(1),$(1),whr-600d,WHR-600D,$(whr_300hp2_mtd_size))
-@@ -680,6 +681,7 @@ define Image/Build/Profile/Default
+@@ -698,6 +699,7 @@ define Image/Build/Profile/Default
  	$(call Image/Build/Profile/WHR300HP2,$(1))
  	$(call Image/Build/Profile/WHR600D,$(1))
  	$(call Image/Build/Profile/NA930,$(1))
